@@ -124,7 +124,7 @@ void app_ebike_stop(void)
 }
 
 
-static void control_loop_current_setter(void)
+static void control_loop_simple_current_setter(void)
 {
     for(;;)
 	{
@@ -218,7 +218,6 @@ static void control_loop_current_setter(void)
 	} // end for ever
 }
 
-
 static inline void pas_process(void)
 {
     // PAS
@@ -250,8 +249,99 @@ static inline void pas_process(void)
         }
         pas_speed_rps = 0.0f;
     }
-
 }
+
+
+static void control_loop_current(void)
+{
+    // 10% per/ s
+    static const float RPM_MEAN_FACTOR_IN  = 1.0f / EBIKE_MAIN_UPDATE_RATE_Hz;
+    static const float RPM_MEAN_FACTOR_OLD = (1.0f - RPM_MEAN_FACTOR_IN);
+
+    for(;;)
+	{
+        loop_cnt++;
+        chThdSleepMilliseconds(1000/EBIKE_MAIN_UPDATE_RATE_Hz);
+
+		if (stop_now)
+		{
+			is_running = false;
+            mc_interface_release_motor();
+			return;
+		}
+
+        float pas_speed_old = pas_speed_rps;
+        pas_process();
+#ifdef PAS_KICKDOWN
+        float pas_div = pas_speed_rps - pas_speed_old;
+        //pas_div *= 0.5f;
+        if (pas_div < 0.0f)
+        {
+            pas_div *= 0.5f;
+        }
+        setpoint_rpm = setpoint_rpm + ( setpoint_rpm * pas_div/pas_speed_rps);
+#endif // PAS_KICKDOWN
+
+		float rpm = mc_interface_get_rpm();
+		setpoint_rpm = RPM_MEAN_FACTOR_OLD * setpoint_rpm + RPM_MEAN_FACTOR_IN * rpm;
+
+        if (setpoint_rpm < EBIKE_RPM_MIN)
+        {
+            setpoint_rpm = EBIKE_RPM_MIN;
+        }
+
+        float err_rpm = setpoint_rpm - rpm;
+        float new_setpoint_current = err_rpm / 2000.0f; //0...1000
+        // low pass a bit
+        setpoint_current = 0.01f* new_setpoint_current + 0.99f * setpoint_current;
+
+        // minimum
+        float min_current = 0.0025f * (1.0f + (setpoint_rpm / 1000.0f));
+
+        if (setpoint_current < min_current)
+        {
+            setpoint_current = min_current;
+            //commands_printf("current min %f",setpoint_current );
+        }
+
+		if (setpoint_current > 1.0f)
+        {
+            setpoint_current = 1.0f;
+            commands_printf("current max");
+        }
+
+        if (pas_speed_rps < 0.2f) // 0.4 rotation/s
+        {
+            setpoint_current = 0.0f;
+            setpoint_rpm = 0.0f;
+        }
+
+		// TODO: Bremse
+
+		if ( loop_cnt > 100 ) // wait 0.5 s
+        {
+            if (setpoint_current < 0.001f)
+            {
+                mc_interface_release_motor();
+            }
+            else
+            {
+                if ((loop_cnt % 10 ) == 0)
+                {
+                    commands_printf("[%u] %f MOTOR current control rpm %02f current %02f ", loop_cnt, rpm ,setpoint_rpm, setpoint_current);
+                }
+                mc_interface_set_current_rel(setpoint_current);
+            }
+        }
+        else
+        {
+            //commands_printf("wait");
+        }
+
+		timeout_reset();
+	} // end for ever
+}
+
 
 static inline void control_loop_speed_pid_current_limit(void)
 {
@@ -384,8 +474,9 @@ static THD_FUNCTION(ebike_thread, arg)
 	// UART RX port as input for break sensor
 	palSetPadMode(HW_UART_RX_PORT, HW_UART_RX_PIN, PAL_MODE_INPUT_PULLUP);
 
-    control_loop_speed_pid_current_limit();
-    // control_loop_current_setter();
+    //control_loop_speed_pid_current_limit();
+    control_loop_current();
+    // control_loop_simple_current_setter();
 
 }
 
