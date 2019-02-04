@@ -3,6 +3,7 @@
 ##############################################################################
 # Processing options coming from the upper Makefile.
 #
+export PATH := /home/thorsten/opt/gcc-arm-none-eabi/bin/:$(PATH)
 
 # Compiler options
 OPT = $(USE_OPT)
