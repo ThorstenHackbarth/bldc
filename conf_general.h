@@ -61,8 +61,8 @@
 //#define HW_VERSION_46 // Also for 4.7
 //#define HW_VERSION_48
 //#define HW_VERSION_49
-//#define HW_VERSION_410 // Also for 4.11 and 4.12
-#define HW_VERSION_60
+#define HW_VERSION_410 // Also for 4.11 and 4.12
+//#define HW_VERSION_60
 //#define HW_VERSION_R2
 //#define HW_VERSION_VICTOR_R1A
 //#define HW_VERSION_DAS_RS
@@ -93,6 +93,8 @@
  * Set APP_CUSTOM_TO_USE to the name of the main C file of the custom application.
  */
 //#define APP_CUSTOM_TO_USE			"app_ellwee.c"
+#define APP_CUSTOM_TO_USE			"app_ebike.c"
+
 
 /*
  * Enable CAN-bus
@@ -137,7 +139,7 @@
 
 // Actual voltage on 3.3V net based on internal reference
 //#define V_REG						(1.21 / ((float)ADC_Value[ADC_IND_VREFINT] / 4095.0))
-#define V_REG						3.3
+#define V_REG						3.3f
 
 // Use the pins for the hardware SPI port instead of the hall/encoder pins for the AS5047
 #ifndef AS5047_USE_HW_SPI_PINS
