@@ -3,6 +3,8 @@
 # NOTE: Can be overridden externally.
 #
 
+export PATH := /home/thorsten/opt/gcc-arm-none-eabi/bin/:$(PATH)
+
 # Compiler options here.
 ifeq ($(USE_OPT),)
   USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16 -std=gnu99 -D_GNU_SOURCE
@@ -41,9 +43,9 @@ ifeq ($(USE_THUMB),)
 endif
 
 # Enable this if you want to see the full log while compiling.
-ifeq ($(USE_VERBOSE_COMPILE),)
+#ifeq ($(USE_VERBOSE_COMPILE),)
   USE_VERBOSE_COMPILE = yes
-endif
+#endif
 
 # If enabled, this option makes the build process faster by not compiling
 # modules not used in the current configuration.
@@ -91,6 +93,9 @@ endif
 
 # Define project name here
 PROJECT = BLDC_4_ChibiOS
+
+
+#PATH=~/opt/gcc-arm-none-eabi/bin/:$(PATH)
 
 # Imported source files and paths
 CHIBIOS = ChibiOS_3.0.2
@@ -198,20 +203,21 @@ INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
 
 MCU  = cortex-m4
 
+GCCPATH = ~/opt/gcc-arm-none-eabi/bin/
 #TRGT = arm-elf-
 TRGT = arm-none-eabi-
-CC   = $(TRGT)gcc
-CPPC = $(TRGT)g++
+CC   = $(GCCPARTH)$(TRGT)gcc
+CPPC = $(GCCPARTH)$(TRGT)g++
 # Enable loading with g++ only if you need C++ runtime support.
 # NOTE: You can use C++ even without C++ support if you are careful. C++
 #       runtime support makes code size explode.
-LD   = $(TRGT)gcc
+LD   = $(GCCPARTH)$(TRGT)gcc
 #LD   = $(TRGT)g++
-CP   = $(TRGT)objcopy
-AS   = $(TRGT)gcc -x assembler-with-cpp
-AR   = $(TRGT)ar
-OD   = $(TRGT)objdump
-SZ   = $(TRGT)size
+CP   = $(GCCPARTH)$(TRGT)objcopy
+AS   = $(GCCPARTH)$(TRGT)gcc -x assembler-with-cpp
+AR   = $(GCCPARTH)$(TRGT)ar
+OD   = $(GCCPARTH)$(TRGT)objdump
+SZ   = $(GCCPARTH)$(TRGT)size
 HEX  = $(CP) -O ihex
 BIN  = $(CP) -O binary
 
